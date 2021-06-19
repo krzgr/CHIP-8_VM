@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <chrono>
 
 class CHIP8
 {
@@ -17,7 +19,7 @@ public:
     static uint16_t getX(uint16_t opcode);
     static uint16_t getY(uint16_t opcode);
 
-private:
+protected:
     std::vector<uint8_t> RAM;
     std::vector<uint8_t> V;
     uint16_t I;
@@ -25,6 +27,11 @@ private:
 
     std::vector<uint16_t> STACK;
     uint8_t SP;
+
+    uint8_t delayTimer;
+    uint8_t soundTimer;
+
+    std::mt19937 rng;
 public:
     CHIP8();
     ~CHIP8();
@@ -34,6 +41,6 @@ public:
 
     void run();
 
-private:
+protected:
     void clockCycle();
 };
