@@ -4,6 +4,9 @@
 class CHIP8_test : public CHIP8
 {
 public:
+    CHIP8_test(CHIP8_Mediator& m)
+        : CHIP8(m) { }
+        
     std::vector<uint8_t>& getRAM()
     {
         return RAM;
@@ -59,7 +62,8 @@ TEST(chip_test, clear_screen)
 
 TEST(chip_test, reset_functionality)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
 
     for(auto& x : t.getRAM())
         ASSERT_EQ(x, 0);
@@ -81,7 +85,8 @@ TEST(chip_test, reset_functionality)
 
 TEST(chip_test, check_subroutines)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     //Calls subroutine at 0x0555
     uint8_t instr[] = { 0x25, 0x55 };
     memcpy(&t.getRAM()[0] + t.getPC(), instr, sizeof(instr));
@@ -103,7 +108,8 @@ TEST(chip_test, check_subroutines)
 
 TEST(chip_test, jump_to_adress)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     //Jumps to 0x0555
     uint8_t instr[] = { 0x15, 0x55 };
 
@@ -115,7 +121,8 @@ TEST(chip_test, jump_to_adress)
 
 TEST(chip_test, skipping_instructions)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     //Skip next instruction if Vx == NN
     uint8_t instr[] = { 0x30, 0x55, // skip if V[0] == 0x55
                         0x30, 0x00, // skip if V[0] == 0x00
@@ -151,7 +158,8 @@ TEST(chip_test, skipping_instructions)
 
 TEST(chip_test, setting_V_register)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x65, 0x11, // V[0x5] = 0x11
                         0x6f, 0xff  // V[0xf] = 0xff
@@ -168,7 +176,8 @@ TEST(chip_test, setting_V_register)
 
 TEST(chip_test, adding_value_to_register)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x75, 0x11, // V[0x5] += 0x11
                         0x75, 0x22, // V[0x5] += 0x22
@@ -189,7 +198,8 @@ TEST(chip_test, adding_value_to_register)
 
 TEST(chip_test, assigning_a_registry_to_another)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x10, // V[0x5] = V[0x1]
                         0x8a, 0x50  // V[0xa] = V[0x5]
@@ -209,7 +219,8 @@ TEST(chip_test, assigning_a_registry_to_another)
 
 TEST(chip_test, bitwise_OR_operation)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x11, // V[0x5] |= V[0x1]
                         0x8a, 0x51  // V[0xa] |= V[0x5]
@@ -229,7 +240,8 @@ TEST(chip_test, bitwise_OR_operation)
 
 TEST(chip_test, bitwise_AND_operation)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x12, // V[0x5] &= V[0x1]
                         0x81, 0x12  // V[0x1] &= V[0x1]
@@ -249,7 +261,8 @@ TEST(chip_test, bitwise_AND_operation)
 
 TEST(chip_test, bitwise_XOR_operation)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x13, // V[0x5] ^= V[0x1]
                         0x85, 0x53  // V[0x5] ^= V[0x5]
@@ -269,7 +282,8 @@ TEST(chip_test, bitwise_XOR_operation)
 
 TEST(chip_test, adding_two_registrs)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x14, // V[0x5] += V[0x1]
                         0x85, 0x54  // V[0x5] += V[0x5]
@@ -289,7 +303,8 @@ TEST(chip_test, adding_two_registrs)
 
 TEST(chip_test, subtracting_two_registrs)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x15, // V[0x5] -= V[0x1]
                         0x85, 0x15  // V[0x5] -= V[0x1]
@@ -310,7 +325,8 @@ TEST(chip_test, subtracting_two_registrs)
 
 TEST(chip_test, bitwise_SHIFTING_RIGHT_operation)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x16, // V[0x5] >>= 1
                         0x85, 0xf6  // V[0x5] >>= 1
@@ -330,7 +346,8 @@ TEST(chip_test, bitwise_SHIFTING_RIGHT_operation)
 
 TEST(chip_test, subtracting_two_registrs_2)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
     
     uint8_t instr[] = { 0x85, 0x17, // V[0x5] = V[0x1] - V[0x5]
                         0x85, 0x27  // V[0x5] = V[0x2] - V[0x5]
@@ -351,7 +368,8 @@ TEST(chip_test, subtracting_two_registrs_2)
 
 TEST(chip_test, bitwise_SHIFTING_LEFT_operation)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
 
     uint8_t instr[] = { 0x85, 0x1e, // V[0x5] <<= 1
                         0x85, 0xfe  // V[0x5] <<= 1
@@ -371,7 +389,8 @@ TEST(chip_test, bitwise_SHIFTING_LEFT_operation)
 
 TEST(chip_test, setting_I_register)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
 
     uint8_t instr[] = { 0xa5, 0x55, // I = 0x555
                         0xaf, 0xff  // I = 0xfff
@@ -388,7 +407,8 @@ TEST(chip_test, setting_I_register)
 
 TEST(chip_test, jump_to_adress_plus_offset)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
 
     uint8_t instr[] = { 0xb5, 0x55 // PC = 0x555 + V[0]
                       };
@@ -404,7 +424,8 @@ TEST(chip_test, jump_to_adress_plus_offset)
 
 TEST(chip_test, Vx_to_random_number)
 {
-    CHIP8_test t;
+    CHIP8_Mediator m;
+	CHIP8_test t(m);
 
     uint8_t instr[] = { 0xc5, 0x0f // V[0x5] = rand() & 0xf
                       };

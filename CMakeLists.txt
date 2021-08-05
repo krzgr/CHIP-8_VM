@@ -5,6 +5,8 @@ set(SRC_FILES
     "src/main.cpp"
     "src/CHIP8.hpp"
     "src/CHIP8.cpp"
+    "src/CHIP8_Mediator.hpp"
+    "src/CHIP8_Mediator.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})

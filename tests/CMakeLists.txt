@@ -18,6 +18,7 @@ add_executable(
   ${PROJECT_NAME}_test
   test.cpp
   ../src/CHIP8.cpp
+  ../src/CHIP8_Mediator.cpp
 )
 target_link_libraries(
   ${PROJECT_NAME}_test

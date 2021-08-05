@@ -1,16 +1,9 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <random>
-#include <chrono>
+#include "CHIP8_Mediator.hpp"
 
 class CHIP8
 {
 public:
     static const int memoryImageOffset = 0x200;
-
 
     static uint16_t getNNN(uint16_t opcode);
     static uint16_t getNN(uint16_t opcode);
@@ -32,8 +25,11 @@ protected:
     uint8_t soundTimer;
 
     std::mt19937 rng;
+
+    std::vector<std::vector<bool>> frameBuffer;
+    CHIP8_Mediator& mediator;
 public:
-    CHIP8();
+    CHIP8(CHIP8_Mediator& Mediator);
     ~CHIP8();
 
     bool loadMemoryImage(std::string filename);

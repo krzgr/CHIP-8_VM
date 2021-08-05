@@ -1,8 +1,8 @@
-#include "CHIP8_Mediator.hpp"
 #include "CHIP8.hpp"
 
-CHIP8::CHIP8()
-    : RAM(4096), V(16), STACK(12), 
+CHIP8::CHIP8(CHIP8_Mediator& Mediator)
+    : RAM(4096), V(16), STACK(12), mediator(Mediator),
+        frameBuffer(CHIP8_CONSTANTS::frameHeight, std::vector<bool>(CHIP8_CONSTANTS::frameWidth, false)),
         rng(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
     this->reset();
@@ -20,15 +20,16 @@ bool CHIP8::loadMemoryImage(std::string filename)
     if(memoryImageFile.good() == false)
         return false;
     
-    memoryImageFile.seekg(0, std::ios::end);
-
+    memoryImageFile.unsetf(std::ios::skipws);
+    
+    memoryImageFile.seekg(0, memoryImageFile.end);
     const int fileLengthInBytes = memoryImageFile.tellg();
+    memoryImageFile.seekg(0, memoryImageFile.beg);
 
     if(fileLengthInBytes > RAM.size() - memoryImageOffset)
         return false;
     
-    memoryImageFile.seekg(0, std::ios::beg);
-    memoryImageFile.read((char*)RAM.data() + memoryImageOffset, fileLengthInBytes);
+    memoryImageFile.read((char*)(RAM.data() + memoryImageOffset), fileLengthInBytes);
 
     return true;
 }
@@ -45,6 +46,27 @@ void CHIP8::reset()
 
     delayTimer = 0;
     soundTimer = 0;
+
+    std::vector<uint8_t> font = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+    
+    std::copy(font.begin(), font.end(), RAM.begin());
 }
 
 void CHIP8::run()
@@ -52,7 +74,6 @@ void CHIP8::run()
     while(true)
     {
         clockCycle();
-        std::cin.get();
     }
 }
 
@@ -67,7 +88,9 @@ void CHIP8::clockCycle()
             switch (opcode)
             {
                 case 0x00e0: //Clears the screen
-                    std::cout << "CLEARING DISPLAY NOT IMPLEMENTED" << std::endl;
+                    for(auto& row : frameBuffer)
+                        std::fill(row.begin(), row.end(), false);
+                    mediator.updateFrameBuffer(frameBuffer);
                     break;
 
                 case 0x00ee: //Returns from a subroutine
@@ -187,12 +210,58 @@ void CHIP8::clockCycle()
             break;
         
         case 0xd000:
-            std::cout << "DRAWING A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
-            break;
+        {
+            uint8_t n = getN(opcode);
+            uint8_t x = V[getX(opcode)];
+            uint8_t y = V[getY(opcode)];
 
+            V[0xf] = 0;
+
+            for(uint8_t i = 0; i < n; i++)
+            {
+                for(uint8_t j = 0x80; j > 0; j >>= 1)
+                {
+                    if(frameBuffer[y][x] == true && (RAM[I + i] & j) != 0)
+                        V[0xf] = 1;
+                    frameBuffer[y][x] = ((int)frameBuffer[y][x] ^ ((RAM[I + i] & j) != 0 ? 1 : 0)) != 0;
+                    x = (x + 1) % CHIP8_CONSTANTS::frameWidth;
+                }
+                x -= 8;
+                y = (y + 1) % CHIP8_CONSTANTS::frameHeight;
+            }
+
+            std::cout << std::string(64, '=') << std::endl;
+
+            for(const auto& row : frameBuffer)
+            {
+                for(const auto& x : row)
+                    std::cout << (x == true ? '#' : ' ');
+                std::cout << std::endl;
+            }
+                
+            //std::cout << "DRAWING A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
+            break;
+        }
         case 0xe000:
         {
-                uint8_t delay;
+            switch (opcode & 0xff)
+            {
+                case 0x009e:
+                    if(mediator.isKeyPressed(V[getX(opcode)]))
+                        PC += 2;
+                    break;
+
+                case 0x00a1:
+                    if(mediator.isKeyReleased(V[getX(opcode)]))
+                        PC += 2;
+                    break;
+
+                default:
+                    std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
+                    break;
+            }
+
+            //std::cout << "KEY PRESSING EVENTS IS NOT IMPLEMENTED YET!" << std::endl;
 
         } break;
 
@@ -205,7 +274,8 @@ void CHIP8::clockCycle()
                     break;
                 
                 case 0x0a:
-                    std::cout << "KEY PRESSING - NOT IMPLEMENTED YET!" << std::endl;
+                    V[getX(opcode)] = mediator.getNewKeyPress();
+                    //std::cout << "KEY PRESSING - NOT IMPLEMENTED YET!" << std::endl;
                     break;
                 
                 case 0x15:
@@ -221,7 +291,8 @@ void CHIP8::clockCycle()
                     break;
                 
                 case 0x29:
-                    std::cout << "LOCATION OF A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
+                    I = (uint16_t)V[getX(opcode)] * (uint16_t)5;
+                    //std::cout << "LOCATION OF A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
                     break;
                 
                 case 0x33:
