@@ -1,3 +1,4 @@
+#include "CHIP8_Mediator.hpp"
 #include "CHIP8.hpp"
 
 CHIP8::CHIP8()
