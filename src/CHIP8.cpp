@@ -1,7 +1,8 @@
 #include "CHIP8.hpp"
 
 CHIP8::CHIP8()
-    : RAM(4096), V(16), STACK(12), rng(std::chrono::high_resolution_clock::now().time_since_epoch().count())
+    : RAM(4096), V(16), STACK(12), 
+        rng(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
     this->reset();
 }
@@ -133,12 +134,12 @@ void CHIP8::clockCycle()
                 
                 case 0x4:
                     V[0xf] = (int)V[getX(opcode)] + (int)V[getY(opcode)] > 0xff ? 1 : 0;
-                    V[getX(opcode)] += (int)V[getY(opcode)];
+                    V[getX(opcode)] += V[getY(opcode)];
                     break;
                 
                 case 0x5:
-                    V[0xf] = (int)V[getX(opcode)] > (int)V[getY(opcode)] ? 1 : 0;
-                    V[getX(opcode)] -= (int)V[getY(opcode)];
+                    V[0xf] = V[getX(opcode)] > V[getY(opcode)] ? 1 : 0;
+                    V[getX(opcode)] -= V[getY(opcode)];
                     break;
                 
                 case 0x6:
@@ -163,7 +164,7 @@ void CHIP8::clockCycle()
 
         case 0x9000:
         {
-            if((opcode & 1) == 0)
+            if((opcode & 0x1) == 0)
             {
                 if(V[getX(opcode)] != V[getY(opcode)])
                     PC += 2;
@@ -177,11 +178,11 @@ void CHIP8::clockCycle()
             break;
 
         case 0xb000:
-            PC = V[0] + getNNN(opcode) - 2;
+            PC = (uint16_t)V[0] + getNNN(opcode) - (uint16_t)2;
             break;
 
         case 0xc000:
-            V[getX(opcode)] = rng() & getNN(opcode);
+            V[getX(opcode)] = (uint16_t)rng() & getNN(opcode);
             break;
         
         case 0xd000:
@@ -242,14 +243,10 @@ void CHIP8::clockCycle()
                     std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
             }
         } break;
-
-        default:
-            std::cout << std::hex << (int)opcode << " NOT IMPLEMENTED YET!" << std::endl;
     }
 
     PC += 2;
 }
-
 
 uint16_t CHIP8::getNNN(uint16_t opcode)
 {
