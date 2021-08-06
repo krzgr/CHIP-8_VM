@@ -71,9 +71,27 @@ void CHIP8::reset()
 
 void CHIP8::run()
 {
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
     while(true)
     {
         clockCycle();
+
+        auto duration = std::chrono::high_resolution_clock::now() - start;
+
+        if(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() 
+                >= CHIP8_CONSTANTS::timersTickDurationInMiliseconds)
+        {
+            if(delayTimer)
+                delayTimer--;
+
+            if(soundTimer)
+            {
+                //beep...
+                soundTimer--;
+            }
+            start = std::chrono::high_resolution_clock::now();
+        }
     }
 }
 
@@ -221,27 +239,18 @@ void CHIP8::clockCycle()
             {
                 for(uint8_t j = 0x80; j > 0; j >>= 1)
                 {
-                    if(frameBuffer[y][x] == true && (RAM[I + i] & j) != 0)
+                    if(frameBuffer[y][x] == true && (RAM[I + (uint16_t)i] & j) != 0)
                         V[0xf] = 1;
-                    frameBuffer[y][x] = ((int)frameBuffer[y][x] ^ ((RAM[I + i] & j) != 0 ? 1 : 0)) != 0;
+                    frameBuffer[y][x] = ((int)frameBuffer[y][x] ^ ((RAM[I + (uint16_t)i] & j) != 0 ? 1 : 0)) != 0;
                     x = (x + 1) % CHIP8_CONSTANTS::frameWidth;
                 }
-                x -= 8;
+                x = V[getX(opcode)];
                 y = (y + 1) % CHIP8_CONSTANTS::frameHeight;
             }
 
-            std::cout << std::string(64, '=') << std::endl;
+            mediator.updateFrameBuffer(frameBuffer);
+        } break;
 
-            for(const auto& row : frameBuffer)
-            {
-                for(const auto& x : row)
-                    std::cout << (x == true ? '#' : ' ');
-                std::cout << std::endl;
-            }
-                
-            //std::cout << "DRAWING A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
-            break;
-        }
         case 0xe000:
         {
             switch (opcode & 0xff)

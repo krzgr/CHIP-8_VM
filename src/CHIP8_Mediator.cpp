@@ -67,4 +67,7 @@ uint8_t CHIP8_Mediator::getNewKeyPress()
     for(int i = 0; i < keyArray.size(); i++)
         if(keyArray[i])
             return i;
+    
+    std::cout << "SOMETHING WITH KEY PRESS WENT WRONG!" << std::endl;
+    return 0;
 }

@@ -11,11 +11,15 @@
 #include <atomic>
 #include <vector>
 
+#include <cstdlib>
+
 namespace CHIP8_CONSTANTS
 {
     static const int frameWidth = 64;
     static const int frameHeight = 32;
     static const int pixelSize = 8;
+
+    static const int timersTickDurationInMiliseconds = 16;
 
     static const int keyArraySize = 16;
 }
