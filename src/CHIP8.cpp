@@ -1,7 +1,7 @@
 #include "CHIP8.hpp"
 
 CHIP8::CHIP8(CHIP8_Mediator& Mediator)
-    : RAM(4096), V(16), STACK(12), mediator(Mediator),
+    : RAM(4096), V(16), STACK(stackSize), mediator(Mediator),
         frameBuffer(CHIP8_CONSTANTS::frameHeight, std::vector<bool>(CHIP8_CONSTANTS::frameWidth, false)),
         rng(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
@@ -17,7 +17,7 @@ bool CHIP8::loadMemoryImage(std::string filename)
 {
     std::fstream memoryImageFile(filename, std::ios::in | std::ios::binary);
 
-    if(memoryImageFile.good() == false)
+    if(memoryImageFile.good() == false || !memoryImageFile)
         return false;
     
     memoryImageFile.unsetf(std::ios::skipws);
@@ -26,11 +26,11 @@ bool CHIP8::loadMemoryImage(std::string filename)
     const int fileLengthInBytes = memoryImageFile.tellg();
     memoryImageFile.seekg(0, memoryImageFile.beg);
 
-    if(fileLengthInBytes > RAM.size() - memoryImageOffset)
+    if(fileLengthInBytes + memoryImageOffset > RAM.size())
         return false;
-    
-    memoryImageFile.read((char*)(RAM.data() + memoryImageOffset), fileLengthInBytes);
 
+    memoryImageFile.read((char*)(RAM.data() + memoryImageOffset), fileLengthInBytes);
+    
     return true;
 }
 
@@ -75,7 +75,13 @@ void CHIP8::run()
 
     while(mediator.shouldCHIP8Stop() == false)
     {
-        clockCycle();
+        if(PC < 0x200 || PC >= RAM.size())
+        {
+            std::cout << "TRIED TO ACCESS THE FORBIDDEN MEMORY!";
+            mediator.stopCHIP8();
+        }
+        else
+            clockCycle();
         
         auto duration = std::chrono::high_resolution_clock::now() - start;
 
@@ -87,9 +93,12 @@ void CHIP8::run()
 
             if(soundTimer)
             {
-                //beep...
+                mediator.setSoundEffect();
                 soundTimer--;
             }
+            else
+                mediator.unsetSoundEffect();
+            
             start = std::chrono::high_resolution_clock::now();
         }
 
@@ -114,12 +123,23 @@ void CHIP8::clockCycle()
                     break;
 
                 case 0x00ee: //Returns from a subroutine
-                    PC = STACK.at(SP - 1);
-                    SP--;
-                    break;
+                {
+                    if(SP > 0)
+                    {
+                        PC = STACK.at(SP - 1);
+                        SP--;
+                    }
+                    else
+                    {
+                        std::cout << "TRIED TO REMOVE AN ITEM FROM AN EMPTY STACK!" << std::endl;
+                        mediator.stopCHIP8();
+                    }
+
+                } break;
 
                 default: //Calls machine code routine at address NNN
-                    std::cout << "NOT IMPLEMENTED" << std::endl;
+                    std::cout << "Calls machine code routine at address NNN - NOT IMPLEMENTED" << std::endl;
+                    mediator.stopCHIP8();
             }
         } break;
 
@@ -128,9 +148,17 @@ void CHIP8::clockCycle()
             break;
 
         case 0x2000:
-            STACK.at(SP) = PC;
-            SP++;
-            PC = getNNN(opcode) - 2;
+            if(SP < stackSize)
+            {
+                STACK.at(SP) = PC;
+                SP++;
+                PC = getNNN(opcode) - 2;
+            }
+            else
+            {
+                std::cout << "STACK OVERFLOW!" << std::endl;
+                mediator.stopCHIP8();
+            }
             break;
 
         case 0x3000:
@@ -203,6 +231,7 @@ void CHIP8::clockCycle()
                 
                 default:
                     std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
+                    mediator.stopCHIP8();
             }
         } break;
 
@@ -214,7 +243,11 @@ void CHIP8::clockCycle()
                     PC += 2;
             }
             else
+            {
                 std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
+                mediator.stopCHIP8();
+            }
+                
         } break;
             
         case 0xa000:
@@ -223,6 +256,7 @@ void CHIP8::clockCycle()
 
         case 0xb000:
             PC = (uint16_t)V[0] + getNNN(opcode) - (uint16_t)2;
+            //----------------------------
             break;
 
         case 0xc000:
@@ -241,9 +275,9 @@ void CHIP8::clockCycle()
             {
                 for(uint8_t j = 0x80; j > 0; j >>= 1)
                 {
-                    if(frameBuffer[y][x] == true && (RAM[I + (uint16_t)i] & j) != 0)
+                    if(frameBuffer[y][x] == true && (RAM[(I + (uint16_t)i) & 0xfff] & j) != 0)
                         V[0xf] = 1;
-                    frameBuffer[y][x] = ((int)frameBuffer[y][x] ^ ((RAM[I + (uint16_t)i] & j) != 0 ? 1 : 0)) != 0;
+                    frameBuffer[y][x] = ((int)frameBuffer[y][x] ^ ((RAM[(I + (uint16_t)i) & 0xfff] & j) != 0 ? 1 : 0)) != 0;
                     x = (x + 1) % CHIP8_CONSTANTS::frameWidth;
                 }
                 x = V[getX(opcode)];
@@ -269,10 +303,9 @@ void CHIP8::clockCycle()
 
                 default:
                     std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
+                    mediator.stopCHIP8();
                     break;
             }
-
-            //std::cout << "KEY PRESSING EVENTS IS NOT IMPLEMENTED YET!" << std::endl;
 
         } break;
 
@@ -286,7 +319,6 @@ void CHIP8::clockCycle()
                 
                 case 0x0a:
                     V[getX(opcode)] = mediator.getNewKeyPress();
-                    //std::cout << "KEY PRESSING - NOT IMPLEMENTED YET!" << std::endl;
                     break;
                 
                 case 0x15:
@@ -303,27 +335,43 @@ void CHIP8::clockCycle()
                 
                 case 0x29:
                     I = (uint16_t)V[getX(opcode)] * (uint16_t)5;
-                    //std::cout << "LOCATION OF A SPRITE - NOT IMPLEMENTED YET!" << std::endl;
                     break;
                 
                 case 0x33:
                     RAM.at(I) = V[getX(opcode)] / 100;
-                    RAM.at(I + 1) = (V[getX(opcode)] / 10) % 10;
-                    RAM.at(I + 2) = V[getX(opcode)] % 10;
+                    RAM.at((I + 1) & 0xfff) = (V[getX(opcode)] / 10) % 10;
+                    RAM.at((I + 2) & 0xfff) = V[getX(opcode)] % 10;
                     break;
                 
                 case 0x55:
-                    for(uint16_t i = 0; i <= getX(opcode); i++)
-                        RAM.at(I + i) = V[i];
+                    if(I < 0x200 || I + getX(opcode) >= 4096)
+                    {
+                        std::cout << "TRIED TO ACCESS THE FORBIDDEN MEMORY!";
+                        mediator.stopCHIP8();
+                    }
+                    else
+                    {
+                        for(uint16_t i = 0; i <= getX(opcode); i++)
+                            RAM.at(I + i) = V[i];
+                    }
                     break;
                 
                 case 0x65:
-                    for(uint16_t i = 0; i <= getX(opcode); i++)
-                        V[i] = RAM.at(I + i);
+                    if(I < 0x200 || I + getX(opcode) >= 4096)
+                    {
+                        std::cout << "TRIED TO ACCESS THE FORBIDDEN MEMORY!";
+                        mediator.stopCHIP8();
+                    }
+                    else
+                    {
+                        for(uint16_t i = 0; i <= getX(opcode); i++)
+                            V[i] = RAM.at(I + i);
+                    }
                     break;
                 
                 default:
                     std::cout << "OPCODE " << std::hex << (int)opcode << " DOES NOT EXISTS!" << std::endl;
+                    mediator.stopCHIP8();
             }
         } break;
     }

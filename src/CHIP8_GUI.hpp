@@ -4,6 +4,8 @@
 
 class CHIP8_GUI
 {
+public:
+    static const int brickSize = 16;
 private:
     CHIP8 chip8VM;
     CHIP8_Mediator mediator;
@@ -18,7 +20,7 @@ private:
 
     sf::Color brickColor;
 public:
-    CHIP8_GUI();
+    CHIP8_GUI(std::string filepath);
     ~CHIP8_GUI();
 
     void run();

@@ -1,32 +1,36 @@
 #include "CHIP8_GUI.hpp"
 
-CHIP8_GUI::CHIP8_GUI()
+CHIP8_GUI::CHIP8_GUI(std::string filepath)
     : mediator(), chip8VM(mediator), frameBuffer(CHIP8_CONSTANTS::frameHeight,
         std::vector<bool>(CHIP8_CONSTANTS::frameWidth, false)), 
         keyArray(CHIP8_CONSTANTS::keyArraySize, false),
-        brick(sf::Vector2f(CHIP8_CONSTANTS::pixelSize, CHIP8_CONSTANTS::pixelSize)),
+        brick(sf::Vector2f(brickSize, brickSize)),
         brickColor(sf::Color(66, 253, 110))
 {
 
-    if(chip8VM.loadMemoryImage("../res/pong.ch8") == false)
-        return;
-    else
+    if(chip8VM.loadMemoryImage(filepath))
+    {
         chip8Thread = std::thread([this](){
             chip8VM.run();
         });
+    }
+    else
+        std::cout << "UNABLE TO OPEN A FILE!" << std::endl;    
+    
     brick.setFillColor(brickColor);
 }
 
 CHIP8_GUI::~CHIP8_GUI()
 {
     mediator.stopCHIP8();
-    chip8Thread.join();
+    if(chip8Thread.joinable())
+        chip8Thread.join();
 }
 
 void CHIP8_GUI::run()
 {
-    window.create(sf::VideoMode(CHIP8_CONSTANTS::frameWidth * CHIP8_CONSTANTS::pixelSize,
-                    CHIP8_CONSTANTS::frameHeight * CHIP8_CONSTANTS::pixelSize),
+    window.create(sf::VideoMode(CHIP8_CONSTANTS::frameWidth * brickSize,
+                    CHIP8_CONSTANTS::frameHeight * brickSize),
                     "CHIP8 v1.0", sf::Style::Titlebar | sf::Style::Close);
 
     window.setFramerateLimit(100);
@@ -163,6 +167,12 @@ void CHIP8_GUI::run()
         if(mediator.hasFrameBufferChanged())
             frameBuffer = mediator.getNewFrameBuffer();
 
+        //beep...
+        if(mediator.isSoundEffect())
+        {
+            //beep...
+        }
+
         //drawing
         window.clear(sf::Color::Black);
 
@@ -173,10 +183,10 @@ void CHIP8_GUI::run()
             {
                 if(cell)
                     window.draw(brick);
-                brick.move(sf::Vector2f(CHIP8_CONSTANTS::pixelSize, 0.0f));
+                brick.move(sf::Vector2f(brickSize, 0.0f));
             }
 
-            brick.setPosition(sf::Vector2f(0.0f, brick.getPosition().y + CHIP8_CONSTANTS::pixelSize));
+            brick.setPosition(sf::Vector2f(0.0f, brick.getPosition().y + brickSize));
         }
 
         window.display();

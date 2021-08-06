@@ -17,7 +17,6 @@ namespace CHIP8_CONSTANTS
 {
     static const int frameWidth = 64;
     static const int frameHeight = 32;
-    static const int pixelSize = 8;
 
     static const int timersTickDurationInMiliseconds = 16;
 
@@ -33,6 +32,7 @@ private:
 
     std::atomic<bool> frameBufferChanged;
     std::atomic<bool> chipShouldStop;
+    std::atomic<bool> soundEffect;
 
     std::vector<bool> keyArray;
     std::vector<std::vector<bool>> frameBuffer;
@@ -55,4 +55,8 @@ public:
 
     void stopCHIP8();
     bool shouldCHIP8Stop();
+
+    bool isSoundEffect();
+    void setSoundEffect();
+    void unsetSoundEffect();
 };

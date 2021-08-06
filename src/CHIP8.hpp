@@ -12,6 +12,8 @@ public:
     static uint16_t getX(uint16_t opcode);
     static uint16_t getY(uint16_t opcode);
 
+    static const int stackSize = 16;
+
 protected:
     std::vector<uint8_t> RAM;
     std::vector<uint8_t> V;

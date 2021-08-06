@@ -27,7 +27,7 @@ set(SRC_FILES
     "src/CHIP8_GUI.cpp"
 )
 
-add_executable(${PROJECT_NAME} WIN32 ${SRC_FILES})
+add_executable(${PROJECT_NAME}  ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "external/SFML/include")
 
