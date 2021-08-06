@@ -1,15 +1,37 @@
 cmake_minimum_required(VERSION 3.10)
 project("CHIP-8_VM")
 
+add_subdirectory(external/SFML)
+
+if(NOT TARGET sfml-graphics)
+	message(FATAL_ERROR "sfml-graphics is required!")
+elseif(NOT TARGET sfml-main)
+	message(FATAL_ERROR "sfml-main is required!")
+elseif(NOT TARGET sfml-system)
+	message(FATAL_ERROR "sfml-system is required!")
+elseif(NOT TARGET sfml-window)
+	message(FATAL_ERROR "sfml-window is required!")
+endif()
+
+if(NOT BUILD_SHARED_LIBS)
+	add_compile_definitions(SFML_STATIC)
+endif()
+
 set(SRC_FILES
     "src/main.cpp"
     "src/CHIP8.hpp"
     "src/CHIP8.cpp"
     "src/CHIP8_Mediator.hpp"
     "src/CHIP8_Mediator.cpp"
+    "src/CHIP8_GUI.hpp"
+    "src/CHIP8_GUI.cpp"
 )
 
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_executable(${PROJECT_NAME} WIN32 ${SRC_FILES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE "external/SFML/include")
+
+target_link_libraries(${PROJECT_NAME} "sfml-graphics;sfml-main;sfml-system;sfml-window")
 
 set_target_properties( ${PROJECT_NAME}
     PROPERTIES

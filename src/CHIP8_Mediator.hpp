@@ -32,6 +32,7 @@ private:
     std::condition_variable cv;
 
     std::atomic<bool> frameBufferChanged;
+    std::atomic<bool> chipShouldStop;
 
     std::vector<bool> keyArray;
     std::vector<std::vector<bool>> frameBuffer;
@@ -51,4 +52,7 @@ public:
     bool isKeyReleased(uint8_t key);
 
     uint8_t getNewKeyPress();
+
+    void stopCHIP8();
+    bool shouldCHIP8Stop();
 };

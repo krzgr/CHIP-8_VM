@@ -10,7 +10,7 @@ CHIP8::CHIP8(CHIP8_Mediator& Mediator)
 
 CHIP8::~CHIP8()
 {
-    
+
 }
 
 bool CHIP8::loadMemoryImage(std::string filename)
@@ -73,10 +73,10 @@ void CHIP8::run()
 {
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-    while(true)
+    while(mediator.shouldCHIP8Stop() == false)
     {
         clockCycle();
-
+        
         auto duration = std::chrono::high_resolution_clock::now() - start;
 
         if(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() 
@@ -92,6 +92,8 @@ void CHIP8::run()
             }
             start = std::chrono::high_resolution_clock::now();
         }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
 

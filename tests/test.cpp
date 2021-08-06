@@ -64,9 +64,6 @@ TEST(chip_test, reset_functionality)
 {
     CHIP8_Mediator m;
 	CHIP8_test t(m);
-
-    for(auto& x : t.getRAM())
-        ASSERT_EQ(x, 0);
     
     for(auto& x : t.getV())
         ASSERT_EQ(x, 0);

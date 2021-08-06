@@ -2,7 +2,8 @@
 
 CHIP8_Mediator::CHIP8_Mediator()
     : keyArray(CHIP8_CONSTANTS::keyArraySize, false), frameBufferChanged(false),
-    frameBuffer(CHIP8_CONSTANTS::frameHeight, std::vector<bool>(CHIP8_CONSTANTS::frameWidth, false))
+    frameBuffer(CHIP8_CONSTANTS::frameHeight, std::vector<bool>(CHIP8_CONSTANTS::frameWidth, false)),
+    chipShouldStop(false)
 {
     
 }
@@ -70,4 +71,19 @@ uint8_t CHIP8_Mediator::getNewKeyPress()
     
     std::cout << "SOMETHING WITH KEY PRESS WENT WRONG!" << std::endl;
     return 0;
+}
+
+void CHIP8_Mediator::stopCHIP8()
+{
+    {
+        chipShouldStop.store(true);
+        std::unique_lock<std::mutex> lck{mtx};
+        keyArray[0] = true;
+    }
+    cv.notify_all();
+}
+
+bool CHIP8_Mediator::shouldCHIP8Stop()
+{
+    return chipShouldStop.load();
 }
