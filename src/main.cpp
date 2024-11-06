@@ -9,4 +9,5 @@ int main(int argc, char **argv)
         CHIP8_GUI gui(argv[1]);
         gui.run();
     }
+    return 0;
 }

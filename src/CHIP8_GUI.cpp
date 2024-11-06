@@ -15,7 +15,7 @@ CHIP8_GUI::CHIP8_GUI(std::string filepath)
         });
     }
     else
-        std::cout << "UNABLE TO OPEN A FILE!" << std::endl;    
+        std::cout << "UNABLE TO OPEN A FILE!" << std::endl;
     
     brick.setFillColor(brickColor);
 }
@@ -34,7 +34,7 @@ void CHIP8_GUI::run()
                     "CHIP8 v1.0", sf::Style::Titlebar | sf::Style::Close);
 
     window.setFramerateLimit(100);
-    
+
     while (window.isOpen())
     {
         while (window.pollEvent(event))
@@ -166,7 +166,7 @@ void CHIP8_GUI::run()
         //framebuffer changed?
         if(mediator.hasFrameBufferChanged())
             frameBuffer = mediator.getNewFrameBuffer();
-
+        
         //beep...
         if(mediator.isSoundEffect())
         {
@@ -191,5 +191,4 @@ void CHIP8_GUI::run()
 
         window.display();
     }
-
 }

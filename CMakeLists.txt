@@ -5,7 +5,7 @@ add_subdirectory(external/SFML)
 
 if(NOT TARGET sfml-graphics)
 	message(FATAL_ERROR "sfml-graphics is required!")
-elseif(NOT TARGET sfml-main)
+elseif(NOT TARGET sfml-main AND WIN32)
 	message(FATAL_ERROR "sfml-main is required!")
 elseif(NOT TARGET sfml-system)
 	message(FATAL_ERROR "sfml-system is required!")
@@ -31,7 +31,12 @@ add_executable(${PROJECT_NAME}  ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "external/SFML/include")
 
-target_link_libraries(${PROJECT_NAME} "sfml-graphics;sfml-main;sfml-system;sfml-window")
+target_link_libraries(${PROJECT_NAME} "sfml-graphics;sfml-system;sfml-window")
+
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} "sfml-main")
+endif()
+
 
 set_target_properties( ${PROJECT_NAME}
     PROPERTIES

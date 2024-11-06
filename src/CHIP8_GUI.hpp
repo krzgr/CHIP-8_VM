@@ -1,6 +1,7 @@
 #include "CHIP8.hpp"
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio/Sound.hpp>
 
 class CHIP8_GUI
 {

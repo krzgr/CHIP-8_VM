@@ -38,7 +38,7 @@ void CHIP8_Mediator::updateKeyArray(const std::vector<bool>& newKeyArray)
         std::unique_lock<std::mutex> lck{mtx};
         keyArray = newKeyArray;
     }
-    cv.notify_all();
+    keyboardCV.notify_all();
 }
 
 bool CHIP8_Mediator::isKeyPressed(uint8_t key)
@@ -62,7 +62,7 @@ bool CHIP8_Mediator::isKeyReleased(uint8_t key)
 uint8_t CHIP8_Mediator::getNewKeyPress()
 {
     std::unique_lock<std::mutex> lck{mtx};
-    cv.wait(lck, [this](){
+    keyboardCV.wait(lck, [this](){
         return std::find(keyArray.begin(), keyArray.end(), true) != keyArray.end();
     });
 
@@ -81,8 +81,10 @@ void CHIP8_Mediator::stopCHIP8()
         std::unique_lock<std::mutex> lck{mtx};
         chipShouldStop.store(true);
         keyArray[0] = true;
+        soundEffect.store(false);
     }
-    cv.notify_all();
+    keyboardCV.notify_all();
+    soundCV.notify_all();
 }
 
 bool CHIP8_Mediator::shouldCHIP8Stop()
@@ -98,9 +100,18 @@ bool CHIP8_Mediator::isSoundEffect()
 void CHIP8_Mediator::setSoundEffect()
 {
     soundEffect.store(true);
+    soundCV.notify_all();
 }
 
 void CHIP8_Mediator::unsetSoundEffect()
 {
     soundEffect.store(false);
+}
+
+void CHIP8_Mediator::waitForSoundEffect()
+{
+    std::unique_lock<std::mutex> lck{mtx};
+    soundCV.wait(lck, [this](){
+        return isSoundEffect();
+    });
 }

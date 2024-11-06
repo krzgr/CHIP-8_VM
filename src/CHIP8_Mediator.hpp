@@ -11,7 +11,7 @@
 #include <atomic>
 #include <vector>
 
-#include <cstdlib>
+#include <future>
 
 namespace CHIP8_CONSTANTS
 {
@@ -28,7 +28,8 @@ class CHIP8_Mediator
 {
 private:
     std::mutex mtx;
-    std::condition_variable cv;
+    std::condition_variable keyboardCV;
+    std::condition_variable soundCV;
 
     std::atomic<bool> frameBufferChanged;
     std::atomic<bool> chipShouldStop;
@@ -59,4 +60,6 @@ public:
     bool isSoundEffect();
     void setSoundEffect();
     void unsetSoundEffect();
+
+    void waitForSoundEffect();
 };

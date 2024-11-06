@@ -10,7 +10,7 @@ CHIP8::CHIP8(CHIP8_Mediator& Mediator)
 
 CHIP8::~CHIP8()
 {
-
+    mediator.stopCHIP8();
 }
 
 bool CHIP8::loadMemoryImage(std::string filename)
